@@ -91,16 +91,18 @@ function loadScene()
     /*******************
     * TO DO: Añadir a la escena un modelo importado en el centro del pentagono
     *******************/
-   // Importar un modelo en glTF en el centro del pentágono
-
+   
+    // Importar un modelo en json en el centro del pentágono
     const loader = new THREE.ObjectLoader();
     loader.load('models/soldado/soldado.json', 
-   function (objeto){
+    function (objeto){
         const soldado = new THREE.Object3D();
         soldado.add(objeto);
         pentagono.add(soldado);
         soldado.name = 'soldado';
     });
+    
+    // Importar un modelo en glTF en el centro del pentágono
     /*
     const glloader = new GLTFLoader();
     console.log("Intentando cargar modelo...");
