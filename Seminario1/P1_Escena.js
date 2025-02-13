@@ -92,15 +92,30 @@ function loadScene()
     * TO DO: Añadir a la escena un modelo importado en el centro del pentagono
     *******************/
    // Importar un modelo en glTF en el centro del pentágono
-    const loader = new GLTFLoader();
+
+   /*  const loader = new THREE.ObjectLoader();
+       loader.load('models/soldado/soldado.json', 
+       function (objeto)
+       {
+           const soldado = new THREE.Object3D();
+           soldado.add(objeto);
+           cubo.add(soldado);
+           pentagono.add(soldado);
+           soldado.name = 'soldado';
+       });*/
+    
+    const glloader = new GLTFLoader();
     console.log("Intentando cargar modelo...");
-    loader.load('models/RobotExpressive.glb', function (gltf) {
-    console.log("Modelo cargado:", gltf);
-    gltf.scene.position.set(0, 0, 0);
-    gltf.scene.scale.set(0.5, 0.5, 0.5);
-    scene.add(gltf.scene);
-    }, undefined, function (error) {
+    glloader.load( 'models/robota/scene.gltf', function ( gltf ) {
+        console.log("Modelo cargado:", gltf);
+        gltf.scene.position.set(0, 0, 0);
+        gltf.scene.scale.set(0.5, 0.5, 0.5);;
+        pentagono.add(gltf.scene);
+       
+    }, undefined, function ( error ) {
+       
         console.error("Error cargando el modelo:", error);
+       
     });
 
     /*******************
