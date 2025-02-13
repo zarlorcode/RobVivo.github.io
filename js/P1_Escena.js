@@ -52,59 +52,61 @@ function init()
 
 function loadScene()
 {
-    const material = new THREE.MeshNormalMaterial( { wireframe: true } );
+    const material = new THREE.MeshNormalMaterial( );
 
     /*******************
     * TO DO: Construir un suelo en el plano XZ
     *******************/
     // Suelo
-        const suelo = new THREE.Mesh( new THREE.PlaneGeometry(10,10, 10,10), material );
-        suelo.rotation.x = -Math.PI / 2;
-        scene.add(suelo);
+    const suelo = new THREE.Mesh( new THREE.PlaneGeometry(10,10, 10,10), material );
+    suelo.rotation.x = -Math.PI / 2;
+    scene.add(suelo);
 
     /*******************
     * TO DO: Construir una escena con 5 figuras diferentes posicionadas
     * en los cinco vertices de un pentagono regular alredor del origen
     *******************/
-     // Crear el conjunto de objetos en un pentágono
-     pentagono = new THREE.Object3D();
-     scene.add(pentagono);
- 
-     const radio = 8;
-     const figuras = [];
-     const geometries = [
-         new THREE.BoxGeometry(1, 1, 1),
-         new THREE.SphereGeometry(0.5, 20, 20),
-         new THREE.ConeGeometry(0.5, 1, 20),
-         new THREE.CylinderGeometry(0.3, 0.3, 1, 20),
-         //new THREE.TorusGeometry(0.5, 0.2, 16, 100)
-     ];
- 
-     for (let i = 0; i < 4; i++) {
-         const mesh = new THREE.Mesh(geometries[i], material);
-         const angle = (i * 2 * Math.PI) / 5;
-         mesh.position.set(radio * Math.cos(angle), 0.5, radio * Math.sin(angle));
-         figuras.push(mesh);
-         pentagono.add(mesh);
-     }
-    
+
+    // Crear el conjunto de objetos en un pentágono
+    pentagono = new THREE.Object3D();
+    scene.add(pentagono);
+    const radio = 3;
+    const figuras = [];
+    const geometries = [
+        new THREE.BoxGeometry(1, 1, 1),
+        new THREE.SphereGeometry(0.5, 20, 20),
+        new THREE.ConeGeometry(0.5, 1, 20),
+        new THREE.CylinderGeometry(0.3, 0.3, 1, 20),
+        new THREE.TorusGeometry(0.5, 0.2, 16, 100)
+    ];
+     
+    for (let i = 0; i < 5; i++) {
+        const mesh = new THREE.Mesh(geometries[i], material);
+        const angle = (i * 2 * Math.PI) / 5;
+        mesh.position.set(radio * Math.cos(angle), 0.5, radio * Math.sin(angle));
+        figuras.push(mesh);
+        pentagono.add(mesh);
+    }
+
     /*******************
     * TO DO: Añadir a la escena un modelo importado en el centro del pentagono
     *******************/
-     // Importar un modelo en glTF en el centro del pentágono
-     const loader = new GLTFLoader();
-     loader.load('models/RobotExpressive.glb', function (gltf) {
-         gltf.scene.position.set(0, 0, 0);
-         gltf.scene.scale.set(0.5, 0.5, 0.5);
-         scene.add(gltf.scene);
-     }, undefined, function (error) {
-         console.error(error);
-     });
+   // Importar un modelo en glTF en el centro del pentágono
+    const loader = new GLTFLoader();
+    console.log("Intentando cargar modelo...");
+    loader.load('models/RobotExpressive.glb', function (gltf) {
+    console.log("Modelo cargado:", gltf);
+    gltf.scene.position.set(0, 0, 0);
+    gltf.scene.scale.set(0.5, 0.5, 0.5);
+    scene.add(gltf.scene);
+    }, undefined, function (error) {
+        console.error("Error cargando el modelo:", error);
+    });
 
     /*******************
     * TO DO: Añadir a la escena unos ejes
     *******************/
-    scene.add(new THREE.AxesHelper(5));
+   scene.add(new THREE.AxesHelper(5));
 }
 
 function update()

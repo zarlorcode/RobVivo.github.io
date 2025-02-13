@@ -93,12 +93,14 @@ function loadScene()
     *******************/
    // Importar un modelo en glTF en el centro del pentágono
     const loader = new GLTFLoader();
+    console.log("Intentando cargar modelo...");
     loader.load('models/RobotExpressive.glb', function (gltf) {
-        gltf.scene.position.set(0, 0, 0);
-        gltf.scene.scale.set(0.5, 0.5, 0.5);
-        scene.add(gltf.scene);
+    console.log("Modelo cargado:", gltf);
+    gltf.scene.position.set(0, 0, 0);
+    gltf.scene.scale.set(0.5, 0.5, 0.5);
+    scene.add(gltf.scene);
     }, undefined, function (error) {
-        console.error(error);
+        console.error("Error cargando el modelo:", error);
     });
 
     /*******************
