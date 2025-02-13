@@ -93,17 +93,15 @@ function loadScene()
     *******************/
    // Importar un modelo en glTF en el centro del pentágono
 
-   /*  const loader = new THREE.ObjectLoader();
-       loader.load('models/soldado/soldado.json', 
-       function (objeto)
-       {
-           const soldado = new THREE.Object3D();
-           soldado.add(objeto);
-           cubo.add(soldado);
-           pentagono.add(soldado);
-           soldado.name = 'soldado';
-       });*/
-    
+    const loader = new THREE.ObjectLoader();
+    loader.load('models/soldado/soldado.json', 
+   function (objeto){
+        const soldado = new THREE.Object3D();
+        soldado.add(objeto);
+        pentagono.add(soldado);
+        soldado.name = 'soldado';
+    });
+    /*
     const glloader = new GLTFLoader();
     console.log("Intentando cargar modelo...");
     glloader.load( 'models/robota/scene.gltf', function ( gltf ) {
@@ -116,7 +114,7 @@ function loadScene()
        
         console.error("Error cargando el modelo:", error);
        
-    });
+    });*/
 
     /*******************
     * TO DO: Añadir a la escena unos ejes
