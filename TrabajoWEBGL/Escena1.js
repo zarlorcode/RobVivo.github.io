@@ -3,6 +3,7 @@
 import * as THREE from "../lib/three.module.js";
 import { OrbitControls } from "../lib/OrbitControls.module.js";
 import { GLTFLoader } from "../lib/GLTFLoader.module.js";
+import { FBXLoader } from "https://cdn.jsdelivr.net/npm/three@0.118.1/examples/jsm/loaders/FBXLoader.js";
 import { TWEEN } from "../lib/tween.module.min.js";
 import { GUI } from "../lib/lil-gui.module.min.js";
 import FPSPlayer from './FPSPlayer.js'; // Importar la clase FPSPlayer
@@ -79,6 +80,26 @@ class LoadModelDemo {
         this._previousRAF = null;
         this._LoadModel();
         this._RAF();
+    }
+
+    _LoadAnimated(){
+        const loader = new FBXLoader();
+        loader.setPath('models/Player/');
+        loader.load('player.fbx', (fbx=>{
+            fbx.scale.setScalar(0.1);
+            fbx.traverse(c =>{
+                c.castShadow = true;
+            });
+
+            const anim = new FBXLoader();
+            anim.setPath('models/Player/');
+            anim.load('dance.fbx', (anim) => {
+                this._mixer = new THREE.AnimationMixer(fbx);
+                const idle = this._mixer.clipAction(anim.animations[0]);
+                idle.play();
+            });
+            this._scene.add(fbx);
+        }));
     }
 
     _LoadModel(){
