@@ -1,12 +1,87 @@
 // Escena1.js
 
-import * as THREE from "../lib/three.module.js";
+//import * as THREE from "../lib/three.module.js";
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118.1/build/three.module.js';
 import { OrbitControls } from "../lib/OrbitControls.module.js";
 import { GLTFLoader } from "../lib/GLTFLoader.module.js";
-import { FBXLoader } from "https://cdn.jsdelivr.net/npm/three@0.118.1/examples/jsm/loaders/FBXLoader.js";
+
+import { FBXLoader } from 'https://cdn.jsdelivr.net/npm/three@0.118.1/examples/jsm/loaders/FBXLoader.js';
 import { TWEEN } from "../lib/tween.module.min.js";
 import { GUI } from "../lib/lil-gui.module.min.js";
-import FPSPlayer from './FPSPlayer.js'; // Importar la clase FPSPlayer
+
+class BasicCharacterControls {
+    constructor(params) {
+        this._Init(params);
+    }
+    _Init(params) {
+        this._params = params;
+        this._move = {
+            foward: false,
+            backward: false,
+            left: false,
+            right: false,
+        };
+        this._decceleration = new THREE.Vector3(-0.0005, -0.0001, -5.0);
+        this._acceleration = new THREE.Vector3(1,0.25,50.0);
+        this._velocity = new THREE.Vector3(0,0,0);
+
+        document.addEventListener('keydown',(e) => this._onKeyDown(e), false);
+        document.addEventListener('keyup',(e) => this._onKeyUp(e), false);
+    }
+    _onKeyDown(event) {
+        switch (event.keyCode) {
+            case 87://w
+                this._move.foward = true;
+                break;
+            case 65: //a
+                this._move.left = true;
+                break;
+            case 83: //s
+                this._move.backward = true;
+                break;
+            case 68: // d
+                this._move.right = true;
+            case 38://up
+            case 37: //left
+            case 40: //down
+            case 39: //right
+                break;
+        }  
+    }    
+    
+    Update(timeInSeconds){
+        const velocity = this._velocity;
+        const frameDecceleration = new THREE.Vector3(
+            velocity.x*this._decceleration.x,
+            velocity.y*this._decceleration.y,
+            velocity.z*this._decceleration.z
+        );
+        frameDecceleration.multiplyScalar(timeInSeconds);
+        frameDecceleration.z = Math.sign(frameDecceleration.z)*Math.min(
+            Math.abs(frameDecceleration.z),Math.abs(velocity.z));
+        velocity.add(frameDecceleration);
+
+        const controlObject = this._params.target;
+        const _Q = new THREE.Quaternion();
+        const _A = new THREE.Vector3();
+        const _R = controlObject.quaternion.clone();
+
+        if(this._move.foward) {
+            velocity.z += this._acceleration.z * timeInSeconds;
+        }
+
+        if(this._move.backward) {
+            velocity.z -= this._acceleration.z * timeInSeconds;
+        }
+        if(this._move.left) {
+            velocity.x += this._acceleration.z * timeInSeconds;
+        }
+        if(this._move.right) {
+            velocity.x -= this._acceleration.z * timeInSeconds;
+        }
+    }
+    
+}
 
 class LoadModelDemo {
     constructor() {
@@ -78,11 +153,12 @@ class LoadModelDemo {
         this._scene.add(plane);
 
         this._previousRAF = null;
-        this._LoadModel();
+        //this._LoadModel();
+        this._LoadAnimatedModel();
         this._RAF();
     }
 
-    _LoadAnimated(){
+    _LoadAnimatedModel(){
         const loader = new FBXLoader();
         loader.setPath('models/Player/');
         loader.load('player.fbx', (fbx=>{
@@ -101,6 +177,7 @@ class LoadModelDemo {
             this._scene.add(fbx);
         }));
     }
+    
 
     _LoadModel(){
         const glloader = new GLTFLoader();
