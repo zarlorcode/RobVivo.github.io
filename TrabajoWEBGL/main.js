@@ -1,12 +1,13 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118.1/build/three.module.js';
 import { OrbitControls } from "../lib/OrbitControls.module.js";
-import { GLTFLoader } from "../lib/GLTFLoader.module.js";
+import {GLTFLoader} from "../lib/GLTFLoader.module.js";
 import { FBXLoader } from 'https://cdn.jsdelivr.net/npm/three@0.118.1/examples/jsm/loaders/FBXLoader.js';
 
+let suelo;
 class BasicCharacterControllerProxy {
   constructor(animations) {
     this._animations = animations;
-  }
+  } 
 
   get animations() {
     return this._animations;
@@ -541,8 +542,8 @@ class ThirdPersonCameraDemo {
 
     this._scene = new THREE.Scene();
 
-    let light = new THREE.DirectionalLight(0xFFFFFF, 1.0);
-    light.position.set(-100, 100, 100);
+    let light = new THREE.DirectionalLight(0xFFFFFF, 0.6);
+    light.position.set(170, 100, 100);
     light.target.position.set(0, 0, 0);
     light.castShadow = true;
     light.shadow.bias = -0.001;
@@ -558,20 +559,167 @@ class ThirdPersonCameraDemo {
     light.shadow.camera.bottom = -50;
     this._scene.add(light);
 
+
+
+  // Agregar el helper de la luz direccional
+  const lightHelper = new THREE.DirectionalLightHelper(light, 5); // Tamaño del helper
+  this._scene.add(lightHelper);
+
     light = new THREE.AmbientLight(0xFFFFFF, 0.25);
     this._scene.add(light);
 
+    const cubeGeometry = new THREE.BoxGeometry(8, 8, 8);
+    const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 }); // Color rojo
+    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    cube.position.set(15, 4, 10); // Asegúrate de que el cubo esté sobre el suelo
+    cube.castShadow = true;
+    cube.receiveShadow = true;
+
+this._scene.add(cube);
+this._collisionBox = new THREE.Box3().setFromObject(cube); // Caja de colisión
+
+    let path ="./images/";
+    const texsuelo = new THREE.TextureLoader().load(path+"rockyTerrain.jpg");
+    texsuelo.repeat.set(4,3);
+    texsuelo.wrapS= texsuelo.wrapT = THREE.MirroredRepeatWrapping;
+    const matsuelo = new THREE.MeshStandardMaterial({color:"rgb(150,150,150)",map:texsuelo});
+    // Suelo
+    suelo = new THREE.Mesh( new THREE.PlaneGeometry(500,500,500,100), matsuelo );
+    suelo.rotation.x = -Math.PI/2;
+    suelo.position.y = -0.2;
+    suelo.castShadow = false;
+    suelo.receiveShadow = true;
+    this._scene.add(suelo);
+
+    /*
+    const loader = new FBXLoader();
+    loader.setPath('models/temple/source/'); // Ruta donde está el modelo
+    loader.load('temple_final.fbx', (fbx) => {
+      fbx.scale.setScalar(0.1);  // Ajusta el tamaño si es necesario
+      fbx.traverse((child) => {
+        if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+        }
+      });
+
+    this._scene.add(fbx); // Agregar el modelo a la escena
+    }, (xhr) => {
+      console.log(`Cargando: ${(xhr.loaded / xhr.total) * 100}%`);
+    }, (error) => {
+      console.error("Error al cargar el modelo:", error);
+    });*/
+
+    /*
+    const glloader = new GLTFLoader();
+
+    glloader.load('models/screen_set/scene.gltf', (gltf) => { 
+      gltf.scene.position.y = 1;
+      gltf.scene.rotation.y = -Math.PI / 2;
+      gltf.scene.scale.set(15, 15, 15); 
+    
+      this._scene.add(gltf.scene); 
+      console.log("Modelo cargado correctamente:", gltf);
+
+    }, undefined, (error) => {
+      console.error("Error al cargar el modelo:", error);
+    });*/
+
+    /*
+    const glloader = new GLTFLoader();
+    const modelScale = 15;
+    const planeSize = 500;
+    
+    glloader.load('models/screen_set/scene.gltf', (gltf) => { 
+      const screen = gltf.scene;
+      screen.scale.set(modelScale, modelScale, modelScale);
+      screen.rotation.y = -Math.PI / 2; // Ajusta la rotación según necesidad
+    
+      const paredes = new THREE.Group(); // Grupo para almacenar las pantallas
+    
+      const numScreensX = Math.ceil(planeSize / modelScale);
+      const numScreensZ = Math.ceil(planeSize / modelScale);
+    
+      for (let i = 0; i < numScreensX; i++) {
+        for (let j = 0; j < numScreensZ; j++) {
+          const clone = screen.clone();
+          clone.position.set(i * modelScale - planeSize / 2, 1, j * modelScale - planeSize / 2);
+          paredes.add(clone); // Añadir al grupo
+        }
+      }
+    
+      this._scene.add(paredes); // Añadir el grupo completo a la escena
+      console.log("Pantallas añadidas dentro del grupo 'paredes'.");
+    
+    }, undefined, (error) => {
+      console.error("Error al cargar el modelo:", error);
+    });*/
+
+    const glloader = new GLTFLoader();
+const modelScale = 15;
+const planeSize = 500;
+
+glloader.load('models/screen_set/scene.gltf', (gltf) => { 
+  const screen = gltf.scene;
+  screen.scale.set(modelScale, modelScale, modelScale);
+  screen.rotation.y = -Math.PI / 2; 
+
+  // Obtener la geometría y material del primer hijo del modelo (asumiendo que tiene un Mesh)
+  const baseMesh = screen.children[0]; 
+  if (!baseMesh.isMesh) return console.error("El modelo no es un Mesh válido");
+
+  const geometry = baseMesh.geometry;
+  const material = baseMesh.material;
+
+  // Crear InstancedMesh con el número total de pantallas
+  const numScreensX = Math.ceil(planeSize / modelScale);
+  const numScreensZ = Math.ceil(planeSize / modelScale);
+  const totalScreens = numScreensX * numScreensZ;
+
+  const instancedMesh = new THREE.InstancedMesh(geometry, material, totalScreens);
+
+  let index = 0;
+  const dummy = new THREE.Object3D(); // Para manejar transformaciones
+
+  for (let i = 0; i < numScreensX; i++) {
+    for (let j = 0; j < numScreensZ; j++) {
+      dummy.position.set(i * modelScale - planeSize / 2, 1, j * modelScale - planeSize / 2);
+      dummy.rotation.y = -Math.PI / 2;
+      dummy.updateMatrix();
+      instancedMesh.setMatrixAt(index, dummy.matrix);
+      index++;
+    }
+  }
+
+  this._scene.add(instancedMesh); // Añadir el grupo instanciado a la escena
+  console.log("Pantallas colocadas con InstancedMesh.");
+
+}, undefined, (error) => {
+  console.error("Error al cargar el modelo:", error);
+});
+
+
     
 
-    const plane = new THREE.Mesh(
-        new THREE.PlaneGeometry(100, 100, 10, 10),
-        new THREE.MeshStandardMaterial({
-            color: 0x808080,
-          }));
-    plane.castShadow = false;
-    plane.receiveShadow = true;
-    plane.rotation.x = -Math.PI / 2;
-    this._scene.add(plane);
+
+  //CARGAR ENTORNO BOX
+  path ="./images/Maskonaive2/";
+  const paredesEntorno = [];
+      paredesEntorno.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
+                    map: new THREE.TextureLoader().load(path+"posx.jpg")}) );
+      paredesEntorno.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
+                    map: new THREE.TextureLoader().load(path+"negx.jpg")}) );
+      paredesEntorno.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
+                    map: new THREE.TextureLoader().load(path+"posy.jpg")}) );
+      paredesEntorno.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
+                    map: new THREE.TextureLoader().load(path+"negy.jpg")}) );
+      paredesEntorno.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
+                    map: new THREE.TextureLoader().load(path+"posz.jpg")}) );
+      paredesEntorno.push( new THREE.MeshBasicMaterial({side:THREE.BackSide,
+                    map: new THREE.TextureLoader().load(path+"negz.jpg")}) );
+      const habitacion = new THREE.Mesh( new THREE.BoxGeometry(1000,1000,1000),paredesEntorno);
+      this._scene.add(habitacion);
+
 
     this._mixers = [];
     this._previousRAF = null;
@@ -620,6 +768,7 @@ class ThirdPersonCameraDemo {
     }
 
     if (this._controls) {
+      
       this._controls.Update(timeElapsedS);
     }
 

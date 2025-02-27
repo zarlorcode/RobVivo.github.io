@@ -1,0 +1,11 @@
+Model Information:
+* title:	Screen Set
+* source:	https://sketchfab.com/3d-models/screen-set-a260ba48eedc4397be1f1494efc03c92
+* author:	Starshine (https://sketchfab.com/jutan2004)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Screen Set" (https://sketchfab.com/3d-models/screen-set-a260ba48eedc4397be1f1494efc03c92) by Starshine (https://sketchfab.com/jutan2004) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
