@@ -2,8 +2,10 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118.1/build/three.m
 import { OrbitControls } from "../lib/OrbitControls.module.js";
 import {GLTFLoader} from "../lib/GLTFLoader.module.js";
 import { FBXLoader } from 'https://cdn.jsdelivr.net/npm/three@0.118.1/examples/jsm/loaders/FBXLoader.js';
+import {GUI} from "../lib/lil-gui.module.min.js";
 
 let suelo;
+let video,effectController;
 class BasicCharacterControllerProxy {
   constructor(animations) {
     this._animations = animations;
@@ -46,6 +48,7 @@ class BasicCharacterController {
 
       this._target = fbx;
       this._params.scene.add(this._target);
+      //fbx.position.set(120, 1, -100);  // Esquina frontal izquierda
 
       this._mixer = new THREE.AnimationMixer(this._target);
 
@@ -546,37 +549,30 @@ class ThirdPersonCameraDemo {
     light.position.set(170, 100, 100);
     light.target.position.set(0, 0, 0);
     light.castShadow = true;
-    light.shadow.bias = -0.001;
-    light.shadow.mapSize.width = 4096;
-    light.shadow.mapSize.height = 4096;
-    light.shadow.camera.near = 0.1;
-    light.shadow.camera.far = 500.0;
-    light.shadow.camera.near = 0.5;
-    light.shadow.camera.far = 500.0;
-    light.shadow.camera.left = 50;
-    light.shadow.camera.right = -50;
-    light.shadow.camera.top = 50;
-    light.shadow.camera.bottom = -50;
+    light.shadow.bias = 0.01;  // Reducción del bias para evitar el espacio
+    light.shadow.normalBias = 0.05;  // Puede ayudar a suavizar los bordes
+    light.shadow.mapSize.width = 8192;
+    light.shadow.mapSize.height = 8192;
+
+
+    // Ajuste del área de la cámara de sombras
+    light.shadow.camera.left = -225;  // Esto cubre la mitad del plano 450x450
+    light.shadow.camera.right = 225;
+    light.shadow.camera.top = 225;
+    light.shadow.camera.bottom = -225;
+
+    // Ajuste de los valores near y far para asegurar que cubran todo el rango
+    light.shadow.camera.near = 0.1;   // Valor cercano
+    light.shadow.camera.far = 1000;   // Aumentado el rango de visión de las sombras
+
     this._scene.add(light);
 
-
-
   // Agregar el helper de la luz direccional
-  const lightHelper = new THREE.DirectionalLightHelper(light, 5); // Tamaño del helper
-  this._scene.add(lightHelper);
+  //const lightHelper = new THREE.DirectionalLightHelper(light, 5); // Tamaño del helper
+  //this._scene.add(lightHelper);
 
     light = new THREE.AmbientLight(0xFFFFFF, 0.25);
     this._scene.add(light);
-
-    const cubeGeometry = new THREE.BoxGeometry(8, 8, 8);
-    const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 }); // Color rojo
-    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-    cube.position.set(15, 4, 10); // Asegúrate de que el cubo esté sobre el suelo
-    cube.castShadow = true;
-    cube.receiveShadow = true;
-
-this._scene.add(cube);
-this._collisionBox = new THREE.Box3().setFromObject(cube); // Caja de colisión
 
     let path ="./images/";
     const texsuelo = new THREE.TextureLoader().load(path+"rockyTerrain.jpg");
@@ -584,124 +580,126 @@ this._collisionBox = new THREE.Box3().setFromObject(cube); // Caja de colisión
     texsuelo.wrapS= texsuelo.wrapT = THREE.MirroredRepeatWrapping;
     const matsuelo = new THREE.MeshStandardMaterial({color:"rgb(150,150,150)",map:texsuelo});
     // Suelo
-    suelo = new THREE.Mesh( new THREE.PlaneGeometry(500,500,500,100), matsuelo );
+    suelo = new THREE.Mesh( new THREE.PlaneGeometry(450,450,450,100), matsuelo );
     suelo.rotation.x = -Math.PI/2;
     suelo.position.y = -0.2;
     suelo.castShadow = false;
     suelo.receiveShadow = true;
     this._scene.add(suelo);
 
-    /*
-    const loader = new FBXLoader();
-    loader.setPath('models/temple/source/'); // Ruta donde está el modelo
-    loader.load('temple_final.fbx', (fbx) => {
-      fbx.scale.setScalar(0.1);  // Ajusta el tamaño si es necesario
-      fbx.traverse((child) => {
-        if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-        }
-      });
+    //VIDEO
+    // Cine
+    video = document.createElement('video');
+    video.src = "./videos/GOTVideo.mp4";
+    video.load();
+    video.muted = false;
+    video.play();
+    const texvideo = new THREE.VideoTexture(video);
+    const pantalla = new THREE.Mesh(new THREE.PlaneGeometry(80,38, 4,4), 
+                                    new THREE.MeshBasicMaterial({map:texvideo}));
+    pantalla.position.set(-10,20,50);
+    pantalla.rotation.y = -Math.PI;
+    this._scene.add(pantalla);
+   
 
-    this._scene.add(fbx); // Agregar el modelo a la escena
-    }, (xhr) => {
-      console.log(`Cargando: ${(xhr.loaded / xhr.total) * 100}%`);
-    }, (error) => {
-      console.error("Error al cargar el modelo:", error);
-    });*/
 
-    /*
-    const glloader = new GLTFLoader();
+  //CARGAR PAREDES
+  const glloader = new GLTFLoader();
 
-    glloader.load('models/screen_set/scene.gltf', (gltf) => { 
-      gltf.scene.position.y = 1;
-      gltf.scene.rotation.y = -Math.PI / 2;
-      gltf.scene.scale.set(15, 15, 15); 
-    
-      this._scene.add(gltf.scene); 
-      console.log("Modelo cargado correctamente:", gltf);
+  // Crear un objeto vacío para las paredes
+  const wallsGroup = new THREE.Group(); 
 
-    }, undefined, (error) => {
-      console.error("Error al cargar el modelo:", error);
-    });*/
+  glloader.load('models/screen_set/scene.gltf', (gltf) => {
+    gltf.scene.position.y = 1; 
+    gltf.scene.rotation.y = -Math.PI / 2; 
+    gltf.scene.scale.set(15, 15, 15); 
 
-    /*
-    const glloader = new GLTFLoader();
-    const modelScale = 15;
-    const planeSize = 500;
-    
-    glloader.load('models/screen_set/scene.gltf', (gltf) => { 
-      const screen = gltf.scene;
-      screen.scale.set(modelScale, modelScale, modelScale);
-      screen.rotation.y = -Math.PI / 2; // Ajusta la rotación según necesidad
-    
-      const paredes = new THREE.Group(); // Grupo para almacenar las pantallas
-    
-      const numScreensX = Math.ceil(planeSize / modelScale);
-      const numScreensZ = Math.ceil(planeSize / modelScale);
-    
-      for (let i = 0; i < numScreensX; i++) {
-        for (let j = 0; j < numScreensZ; j++) {
-          const clone = screen.clone();
-          clone.position.set(i * modelScale - planeSize / 2, 1, j * modelScale - planeSize / 2);
-          paredes.add(clone); // Añadir al grupo
-        }
-      }
-    
-      this._scene.add(paredes); // Añadir el grupo completo a la escena
-      console.log("Pantallas añadidas dentro del grupo 'paredes'.");
-    
-    }, undefined, (error) => {
-      console.error("Error al cargar el modelo:", error);
-    });*/
+    // Establecer el tamaño de la pantalla para que se repita adecuadamente
+    const modelWidth = 15; // Ancho del modelo
+    const modelDepth = 15; // Profundidad del modelo
 
-    const glloader = new GLTFLoader();
-const modelScale = 15;
-const planeSize = 500;
+    // Crear las paredes de la habitación (frontal, trasera, izquierda, derecha)
+    const roomSize = 400;  // Tamaño del plano (500x500)
 
-glloader.load('models/screen_set/scene.gltf', (gltf) => { 
-  const screen = gltf.scene;
-  screen.scale.set(modelScale, modelScale, modelScale);
-  screen.rotation.y = -Math.PI / 2; 
-
-  // Obtener la geometría y material del primer hijo del modelo (asumiendo que tiene un Mesh)
-  const baseMesh = screen.children[0]; 
-  if (!baseMesh.isMesh) return console.error("El modelo no es un Mesh válido");
-
-  const geometry = baseMesh.geometry;
-  const material = baseMesh.material;
-
-  // Crear InstancedMesh con el número total de pantallas
-  const numScreensX = Math.ceil(planeSize / modelScale);
-  const numScreensZ = Math.ceil(planeSize / modelScale);
-  const totalScreens = numScreensX * numScreensZ;
-
-  const instancedMesh = new THREE.InstancedMesh(geometry, material, totalScreens);
-
-  let index = 0;
-  const dummy = new THREE.Object3D(); // Para manejar transformaciones
-
-  for (let i = 0; i < numScreensX; i++) {
-    for (let j = 0; j < numScreensZ; j++) {
-      dummy.position.set(i * modelScale - planeSize / 2, 1, j * modelScale - planeSize / 2);
-      dummy.rotation.y = -Math.PI / 2;
-      dummy.updateMatrix();
-      instancedMesh.setMatrixAt(index, dummy.matrix);
-      index++;
+    // Pared frontal (a lo largo del eje X)
+    for (let x = -roomSize / 2; x < roomSize / 2; x += modelWidth) {
+        const newModel = gltf.scene.clone();
+        newModel.position.set(x, 1, roomSize / 2);
+        newModel.castShadow = true;  
+        newModel.receiveShadow = true;  
+        wallsGroup.add(newModel);
     }
-  }
 
-  this._scene.add(instancedMesh); // Añadir el grupo instanciado a la escena
-  console.log("Pantallas colocadas con InstancedMesh.");
+    // Pared trasera (a lo largo del eje X)
+    for (let x = -roomSize / 2; x < roomSize / 2; x += modelWidth) {
+        const newModel = gltf.scene.clone();
+        newModel.position.set(x, 1, -roomSize / 2);
+        newModel.castShadow = true;  
+        newModel.receiveShadow = true;  
+        wallsGroup.add(newModel);
+    }
 
-}, undefined, (error) => {
-  console.error("Error al cargar el modelo:", error);
-});
+    gltf.scene.rotation.y = 0;
+
+    // Pared izquierda (a lo largo del eje Z)
+    for (let z = -roomSize / 2; z < roomSize / 2; z += modelDepth) {
+        const newModel = gltf.scene.clone();
+        newModel.position.set(-roomSize / 2, 1, z);
+        newModel.castShadow = true;  
+        newModel.receiveShadow = true;  
+        wallsGroup.add(newModel);
+    }
+
+    // Pared derecha (a lo largo del eje Z)
+    for (let z = -roomSize / 2; z < roomSize / 2; z += modelDepth) {
+        const newModel = gltf.scene.clone();
+        newModel.position.set(roomSize / 2, 1, z);
+        newModel.castShadow = true;  
+        newModel.receiveShadow = true;  
+        wallsGroup.add(newModel);
+    }
+
+    wallsGroup.children.forEach((wall) => {
+      const position = wall.position;
+      // Ajustar la posición de las paredes frontal, trasera, izquierda y derecha
+      if (position.x === -roomSize / 2 || position.x === roomSize / 2) {
+        position.x -= modelWidth / 2;  // Ajustamos ligeramente en el eje X
+      }
+      if (position.z === -roomSize / 2 || position.z === roomSize / 2) {
+        position.z -= modelDepth / 2;  // Ajustamos ligeramente en el eje Z
+      }
+    });
+
+    // Añadir el grupo de paredes a la escena
+    this._scene.add(wallsGroup);
+
+    console.log("Modelo cargado y paredes generadas correctamente.");
+  }, undefined, (error) => {
+    console.error("Error al cargar el modelo:", error);
+  });
 
 
+  glloader.load('models/torii/scene.gltf', (gltf) => {
+    gltf.scene.position.y = 1;  // Ajusta la altura
     
+    gltf.scene.scale.set(0.1, 0.1, 0.1); 
+    this._scene.add(gltf.scene);  // Añade el modelo a la escena
+    
+    // Asigna sombras a todos los objetos dentro del modelo cargado
+    gltf.scene.traverse((obj) => {
+      if (obj.isObject3D) {
+        obj.castShadow = true;  // El objeto emite sombras
+        obj.receiveShadow = true;  // El objeto recibe sombras
+      }
+    });
 
+    console.log("Modelo GLTF cargado correctamente.");
+  }, undefined, (error) => {
+    console.error("Error al cargar el modelo GLTF:", error);
+  });
 
+ 
+  
   //CARGAR ENTORNO BOX
   path ="./images/Maskonaive2/";
   const paredesEntorno = [];
@@ -723,10 +721,11 @@ glloader.load('models/screen_set/scene.gltf', (gltf) => {
 
     this._mixers = [];
     this._previousRAF = null;
-
+    setupGUI();
     this._LoadAnimatedModel();
     this._RAF();
   }
+
 
   _LoadAnimatedModel() {
     const params = {
@@ -776,7 +775,27 @@ glloader.load('models/screen_set/scene.gltf', (gltf) => {
   }
 }
 
+function setupGUI()
+{
+	// Definicion de los controles
+	effectController = {
+		mensaje: 'My cinema',
+		play: function(){video.play();},
+		pause: function(){video.pause();},
+        mute: false,
+		colorsuelo: "rgb(150,150,150)"
+	};
 
+	// Creacion interfaz
+	const gui = new GUI();
+
+	// Construccion del menu
+  const videofolder = gui.addFolder("Control video");
+  videofolder.add(effectController,"mute").onChange(v=>{video.muted = v});
+	videofolder.add(effectController,"play");
+	videofolder.add(effectController,"pause");
+
+}
 let _APP = null;
 
 window.addEventListener('DOMContentLoaded', () => {
